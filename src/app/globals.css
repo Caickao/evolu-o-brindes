@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-black: #0a0a0a;
+  --color-charcoal: #161616;
+  --color-white: #ffffff;
+  --color-ivory: #faf9f6;
+  --color-gold: #d4af37;
+  --color-gold-light: #e8cd6e;
+  --color-gold-dark: #a8842a;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f2f2f2;
+  --color-gray-200: #e5e5e5;
+  --color-gray-400: #9c9c9c;
+  --color-gray-600: #5c5c5c;
+  --color-gray-800: #262626;
+
+  --background: var(--color-white);
+  --foreground: var(--color-black);
 }
 
 @theme inline {
+  --color-brand-black: var(--color-black);
+  --color-brand-charcoal: var(--color-charcoal);
+  --color-brand-white: var(--color-white);
+  --color-brand-ivory: var(--color-ivory);
+  --color-brand-gold: var(--color-gold);
+  --color-brand-gold-light: var(--color-gold-light);
+  --color-brand-gold-dark: var(--color-gold-dark);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-playfair);
+
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-slide-up: slide-up 0.5s ease-out;
+  --animate-shimmer: shimmer 2.5s linear infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-black);
+}
+
+* {
+  scrollbar-color: var(--color-gold) var(--color-black);
+}
+
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(110deg, var(--color-gold-dark) 10%, var(--color-gold-light) 40%, var(--color-gold) 60%, var(--color-gold-dark) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-50) 50%, var(--color-gray-100) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+.container-page {
+  max-width: 1360px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .container-page {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }

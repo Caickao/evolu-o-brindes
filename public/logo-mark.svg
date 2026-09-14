@@ -1,0 +1,15 @@
+<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Evolução Brindes e Personalizados">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a8842a" />
+      <stop offset="45%" stop-color="#e8cd6e" />
+      <stop offset="60%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#a8842a" />
+    </linearGradient>
+  </defs>
+  <g>
+    <polygon points="57,12 139,54 57,96 81,96 163,54 81,12" fill="url(#goldGrad)" />
+    <polygon points="57,68 139,110 57,152 81,152 163,110 81,68" fill="#0a0a0a" />
+    <polygon points="57,124 139,166 57,208 81,208 163,166 81,124" fill="url(#goldGrad)" />
+  </g>
+</svg>

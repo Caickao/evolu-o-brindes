@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  RECEBIDO
+  EM_PRODUCAO
+  ENVIADO
+  FINALIZADO
+  CANCELADO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String
+  role          Role      @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  orders        Order[]
+  favorites     Favorite[]
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label       String
+  recipient   String
+  street      String
+  number      String
+  complement  String?
+  neighborhood String
+  city        String
+  state       String
+  zipCode     String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  orders      Order[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  group       String
+  icon        String?
+  order       Int       @default(0)
+
+  products    Product[]
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String
+  shortDescription String?
+  price           Float
+  compareAtPrice  Float?
+  images          String
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  customizable    Boolean  @default(true)
+  stock           Int      @default(100)
+  isFeatured      Boolean  @default(false)
+  isNew           Boolean  @default(false)
+  isBestSeller    Boolean  @default(false)
+  minQuantity     Int      @default(1)
+  rating          Float    @default(5)
+  reviewsCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  favorites       Favorite[]
+  orderItems      OrderItem[]
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  number        String      @unique
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  addressId     String?
+  address       Address?    @relation(fields: [addressId], references: [id])
+  status        OrderStatus @default(RECEBIDO)
+  subtotal      Float
+  discount      Float       @default(0)
+  total         Float
+  couponCode    String?
+  customerNotes String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id                String  @id @default(cuid())
+  orderId           String
+  order             Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product @relation(fields: [productId], references: [id])
+  productName       String
+  productImage      String
+  unitPrice         Float
+  quantity          Int
+  personalization   String?
+  total             Float
+}
+
+model Coupon {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  percentOff    Float
+  active        Boolean  @default(true)
+  expiresAt     DateTime?
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  createdAt DateTime @default(now())
+}
