@@ -9,7 +9,7 @@ export const CONTACT = {
   email: "contato@evolucaobrindes.com.br",
   instagram: "https://www.instagram.com/evolucaobrindes",
   address: "Rua das Palmeiras, 120 - Centro, São Paulo - SP",
-  hours: "Segunda a Sexta, 9h às 18h | Sábado, 9h às 13h",
+  hours: "Segunda a Sexta, 8h às 18h",
 };
 
 export const CATEGORY_GROUPS: CategoryGroup[] = [
