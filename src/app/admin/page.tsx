@@ -13,7 +13,7 @@ export default async function AdminDashboard() {
     prisma.order.findMany({ select: { total: true, status: true } }),
   ]);
 
-  const revenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const revenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
   const statusCounts = orders.reduce<Record<string, number>>((acc, o) => {
     acc[o.status] = (acc[o.status] || 0) + 1;
     return acc;

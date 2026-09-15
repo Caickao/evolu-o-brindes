@@ -5,11 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(value: number) {
+/**
+ * Aceita `number` ou um `Prisma.Decimal` (campos monetários vêm do banco como
+ * Decimal, não como number — ver prisma/schema.prisma). Converter aqui, num
+ * único lugar, evita repetir `Number(...)` em cada tela que só exibe o valor.
+ */
+export function formatPrice(value: number | { toString(): string }) {
+  const numericValue = typeof value === "number" ? value : Number(value.toString());
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  }).format(numericValue);
 }
 
 export function slugify(text: string) {

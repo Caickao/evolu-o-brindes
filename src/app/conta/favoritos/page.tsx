@@ -4,6 +4,7 @@ import { Heart } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/product/ProductCard";
+import { normalizeProduct } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Meus Favoritos" };
 
@@ -33,7 +34,7 @@ export default async function FavoritesPage() {
       <h2 className="mb-6 font-display text-xl font-bold">Meus Favoritos</h2>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {favorites.map((fav) => (
-          <ProductCard key={fav.id} product={fav.product} favorited />
+          <ProductCard key={fav.id} product={normalizeProduct(fav.product)} favorited />
         ))}
       </div>
     </div>

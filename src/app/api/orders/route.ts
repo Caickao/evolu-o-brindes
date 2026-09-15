@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
@@ -19,6 +20,12 @@ const schema = z.object({
     )
     .min(1, "O carrinho está vazio"),
 });
+
+class InsufficientStockError extends Error {
+  constructor(public productName: string) {
+    super(`Estoque insuficiente para "${productName}"`);
+  }
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -52,6 +59,17 @@ export async function POST(req: Request) {
     }
   }
 
+  if (addressId) {
+    const address = await prisma.address.findFirst({
+      where: { id: addressId, userId: session.user.id },
+    });
+    if (!address) {
+      return NextResponse.json({ error: "Endereço inválido" }, { status: 400 });
+    }
+  }
+
+  // Preço e totais são calculados com Prisma.Decimal (não `number`) para não
+  // introduzir erro de arredondamento de ponto flutuante em valores monetários.
   const orderItemsData = items.map((item) => {
     const product = products.find((p) => p.id === item.productId)!;
     const quantity = Math.max(item.quantity, product.minQuantity);
@@ -62,37 +80,53 @@ export async function POST(req: Request) {
       unitPrice: product.price,
       quantity,
       personalization: item.personalization,
-      total: product.price * quantity,
+      total: product.price.times(quantity),
     };
   });
 
-  const subtotal = orderItemsData.reduce((sum, i) => sum + i.total, 0);
-  const discount = coupon ? (subtotal * coupon.percentOff) / 100 : 0;
-  const total = Math.max(0, subtotal - discount);
+  const subtotal = orderItemsData.reduce(
+    (sum, i) => sum.plus(i.total),
+    new Prisma.Decimal(0)
+  );
+  const discount = coupon ? subtotal.times(coupon.percentOff).dividedBy(100) : new Prisma.Decimal(0);
+  const total = Prisma.Decimal.max(0, subtotal.minus(discount));
 
-  if (addressId) {
-    const address = await prisma.address.findFirst({
-      where: { id: addressId, userId: session.user.id },
+  try {
+    const order = await prisma.$transaction(async (tx) => {
+      // Decremento condicional: só decrementa se ainda houver estoque suficiente
+      // no momento exato da escrita. Evita vender mais do que existe quando dois
+      // pedidos do mesmo produto chegam ao mesmo tempo.
+      for (const item of orderItemsData) {
+        const result = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (result.count === 0) {
+          throw new InsufficientStockError(item.productName);
+        }
+      }
+
+      return tx.order.create({
+        data: {
+          number: generateOrderNumber(),
+          userId: session.user.id,
+          addressId,
+          couponCode: coupon?.code,
+          customerNotes,
+          subtotal,
+          discount,
+          total,
+          items: { create: orderItemsData },
+        },
+        include: { items: true },
+      });
     });
-    if (!address) {
-      return NextResponse.json({ error: "Endereço inválido" }, { status: 400 });
+
+    return NextResponse.json({ order });
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
     }
+    throw err;
   }
-
-  const order = await prisma.order.create({
-    data: {
-      number: generateOrderNumber(),
-      userId: session.user.id,
-      addressId,
-      couponCode: coupon?.code,
-      customerNotes,
-      subtotal,
-      discount,
-      total,
-      items: { create: orderItemsData },
-    },
-    include: { items: true },
-  });
-
-  return NextResponse.json({ order });
 }

@@ -72,8 +72,8 @@ model Product {
   slug            String   @unique
   description     String
   shortDescription String?
-  price           Float
-  compareAtPrice  Float?
+  price           Decimal  @db.Decimal(10, 2)
+  compareAtPrice  Decimal? @db.Decimal(10, 2)
   images          String
   photos          String   @default("[]")
   categoryId      String
@@ -91,6 +91,8 @@ model Product {
 
   favorites       Favorite[]
   orderItems      OrderItem[]
+
+  @@index([categoryId])
 }
 
 model Favorite {
@@ -112,15 +114,18 @@ model Order {
   addressId     String?
   address       Address?    @relation(fields: [addressId], references: [id])
   status        OrderStatus @default(RECEBIDO)
-  subtotal      Float
-  discount      Float       @default(0)
-  total         Float
+  subtotal      Decimal     @db.Decimal(10, 2)
+  discount      Decimal     @default(0) @db.Decimal(10, 2)
+  total         Decimal     @db.Decimal(10, 2)
   couponCode    String?
   customerNotes String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   items         OrderItem[]
+
+  @@index([userId])
+  @@index([status])
 }
 
 model OrderItem {
@@ -131,16 +136,16 @@ model OrderItem {
   product           Product @relation(fields: [productId], references: [id])
   productName       String
   productImage      String
-  unitPrice         Float
+  unitPrice         Decimal @db.Decimal(10, 2)
   quantity          Int
   personalization   String?
-  total             Float
+  total             Decimal @db.Decimal(10, 2)
 }
 
 model Coupon {
   id            String   @id @default(cuid())
   code          String   @unique
-  percentOff    Float
+  percentOff    Decimal  @db.Decimal(5, 2)
   active        Boolean  @default(true)
   expiresAt     DateTime?
 }

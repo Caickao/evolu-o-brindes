@@ -21,31 +21,51 @@ export function parseProductPhotos(photos: string): string[] {
 
 const productInclude = { category: true } as const;
 
+type PriceLike = { toString(): string };
+type WithPrices = { price: PriceLike; compareAtPrice: PriceLike | null };
+
+/**
+ * Preço e preço-de vêm do banco como `Prisma.Decimal` (ver prisma/schema.prisma).
+ * O resto do app (carrinho, cards, formulários) sempre trabalhou com `number`
+ * simples — normalizamos aqui, na borda de leitura, para que nenhum outro
+ * arquivo precise saber que o valor passou por um banco Decimal.
+ */
+export function normalizeProduct<T extends WithPrices>(product: T) {
+  return {
+    ...product,
+    price: Number(product.price.toString()),
+    compareAtPrice: product.compareAtPrice != null ? Number(product.compareAtPrice.toString()) : null,
+  };
+}
+
 export async function getFeaturedProducts(limit = 4) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { isFeatured: true },
     include: productInclude,
     take: limit,
     orderBy: { createdAt: "desc" },
   });
+  return products.map(normalizeProduct);
 }
 
 export async function getBestSellers(limit = 8) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { isBestSeller: true },
     include: productInclude,
     take: limit,
     orderBy: { createdAt: "desc" },
   });
+  return products.map(normalizeProduct);
 }
 
 export async function getNewProducts(limit = 8) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { isNew: true },
     include: productInclude,
     take: limit,
     orderBy: { createdAt: "desc" },
   });
+  return products.map(normalizeProduct);
 }
 
 export async function getAllCategories() {
@@ -57,15 +77,17 @@ export async function getCategoryBySlug(slug: string) {
 }
 
 export async function getProductBySlug(slug: string) {
-  return prisma.product.findUnique({ where: { slug }, include: productInclude });
+  const product = await prisma.product.findUnique({ where: { slug }, include: productInclude });
+  return product ? normalizeProduct(product) : null;
 }
 
 export async function getRelatedProducts(categoryId: string, excludeId: string, limit = 4) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: { categoryId, id: { not: excludeId } },
     include: productInclude,
     take: limit,
   });
+  return products.map(normalizeProduct);
 }
 
 export type ProductFilters = {
@@ -84,7 +106,9 @@ export async function getUserFavoriteIds(userId?: string | null) {
   return new Set(favorites.map((f) => f.productId));
 }
 
-export async function getFilteredProducts(filters: ProductFilters) {
+export const PRODUCTS_PER_PAGE = 12;
+
+export async function getFilteredProducts(filters: ProductFilters, page = 1) {
   const where: Record<string, unknown> = {};
 
   if (filters.categoria) {
@@ -115,9 +139,23 @@ export async function getFilteredProducts(filters: ProductFilters) {
   if (filters.sort === "maior-preco") orderBy = { price: "desc" };
   if (filters.sort === "novidades") orderBy = { createdAt: "desc" };
 
-  return prisma.product.findMany({
-    where,
-    include: productInclude,
-    orderBy,
-  });
+  const safePage = Math.max(1, page);
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: productInclude,
+      orderBy,
+      skip: (safePage - 1) * PRODUCTS_PER_PAGE,
+      take: PRODUCTS_PER_PAGE,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return {
+    products: products.map(normalizeProduct),
+    total,
+    totalPages: Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE)),
+    page: safePage,
+  };
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
+import { normalizeProduct } from "@/lib/data";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -30,7 +31,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ products });
+  return NextResponse.json({ products: products.map(normalizeProduct) });
 }
 
 export async function POST(req: Request) {

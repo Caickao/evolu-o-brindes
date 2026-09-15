@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PackageSearch } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageSearch } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { SortSelect } from "@/components/product/SortSelect";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
@@ -20,11 +20,13 @@ type SearchParams = Promise<{
   grupo?: string;
   q?: string;
   sort?: string;
+  pagina?: string;
 }>;
 
 export default async function ProdutosPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const session = await auth();
+  const currentPage = Math.max(1, Number(params.pagina) || 1);
 
   const filters: ProductFilters = {
     categoria: params.categoria,
@@ -33,10 +35,22 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
     sort: params.sort as ProductFilters["sort"],
   };
 
-  const [products, favoriteIds] = await Promise.all([
-    getFilteredProducts(filters),
+  const [{ products, totalPages, total }, favoriteIds] = await Promise.all([
+    getFilteredProducts(filters, currentPage),
     getUserFavoriteIds(session?.user?.id),
   ]);
+
+  // Preserva os filtros ativos ao trocar de página.
+  function pageHref(page: number) {
+    const query = new URLSearchParams();
+    if (params.categoria) query.set("categoria", params.categoria);
+    if (params.grupo) query.set("grupo", params.grupo);
+    if (params.q) query.set("q", params.q);
+    if (params.sort) query.set("sort", params.sort);
+    if (page > 1) query.set("pagina", String(page));
+    const qs = query.toString();
+    return qs ? `/produtos?${qs}` : "/produtos";
+  }
 
   const activeCategory = ALL_CATEGORIES.find((c) => c.slug === params.categoria);
 
@@ -92,7 +106,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
 
         <div>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
-            <p className="text-sm text-gray-500">{products.length} produtos encontrados</p>
+            <p className="text-sm text-gray-500">{total} produtos encontrados</p>
             <div className="flex items-center gap-2 text-sm">
               <label htmlFor="sort" className="text-gray-500">
                 Ordenar por
@@ -132,11 +146,54 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} favorited={favoriteIds.has(product.id)} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} favorited={favoriteIds.has(product.id)} />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <nav className="mt-10 flex items-center justify-center gap-2" aria-label="Paginação">
+                  <Link
+                    href={pageHref(Math.max(1, currentPage - 1))}
+                    aria-disabled={currentPage === 1}
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border border-gray-200",
+                      currentPage === 1 ? "pointer-events-none opacity-30" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Link
+                      key={page}
+                      href={pageHref(page)}
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold",
+                        page === currentPage
+                          ? "bg-brand-black text-white"
+                          : "border border-gray-200 hover:bg-gray-50"
+                      )}
+                    >
+                      {page}
+                    </Link>
+                  ))}
+
+                  <Link
+                    href={pageHref(Math.min(totalPages, currentPage + 1))}
+                    aria-disabled={currentPage === totalPages}
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border border-gray-200",
+                      currentPage === totalPages ? "pointer-events-none opacity-30" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </nav>
+              )}
+            </>
           )}
         </div>
       </div>
