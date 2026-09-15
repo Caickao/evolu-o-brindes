@@ -45,6 +45,9 @@ Cupom de desconto de teste: **BEMVINDO10** (10% off).
 - `npm run db:push` — sincroniza o schema com o banco
 - `npm run db:seed` — popula dados de exemplo
 - `npm run db:reset` — **destrutivo**: recria o banco do zero e roda o seed novamente
+- `npm run test` — testes unitários (Vitest)
+- `npm run test:watch` — testes unitários em modo observador
+- `npm run test:e2e` — testes end-to-end do checkout completo (Playwright; sobe o servidor automaticamente)
 
 ## Estrutura do projeto
 
@@ -54,7 +57,7 @@ prisma/
   seed.ts              # dados de demonstração (categorias, produtos, usuários, cupom)
 src/
   app/                 # rotas (App Router)
-    admin/             # painel administrativo (produtos, pedidos, dashboard)
+    admin/             # painel administrativo (produtos, categorias, pedidos, dashboard)
     api/               # rotas de API (auth, register, orders, favorites, addresses, admin/*)
     conta/             # área do cliente (dados, pedidos, favoritos, endereços)
     produto/[slug]/    # página de produto
@@ -69,7 +72,9 @@ src/
 
 ## Categorias e produtos
 
-As categorias seguem a estrutura solicitada (Desbravadores, Troféus e Premiações, Personalizados, Eventos) e estão centralizadas em `src/lib/constants.ts`. Os produtos usam ícones (lucide-react) como identidade visual no lugar de fotos reais — basta trocar pelo componente `ProductImage` por `<img>`/`next/image` quando houver fotos reais dos produtos.
+Categorias são geridas 100% pelo banco de dados via `/admin/categorias` (criar, editar, excluir) — a navegação do site inteiro (header, menu mobile, home, rodapé, filtro do catálogo) lê do banco em tempo real, não de uma lista fixa no código. `src/lib/constants.ts` só guarda os dados usados no `seed.ts` inicial.
+
+Produtos mostram foto real quando cadastrada (campo "Fotos do produto" no admin, aceitando URL de qualquer imagem já hospedada) e caem automaticamente no ícone de identidade visual (lucide-react) enquanto não houver foto. Upload direto de arquivo (em vez de colar URL) é o próximo passo natural via Vercel Blob.
 
 ## Logo
 
@@ -77,15 +82,32 @@ A logomarca em `public/logo.svg` e `public/logo-mark.svg` (favicon) foi recriada
 
 ## Painel administrativo
 
-Acessível em `/admin` apenas para usuários com `role = ADMIN`. Permite:
+Acessível em `/admin` apenas para usuários com `role = ADMIN` (protegido por middleware + checagem em cada rota de API). Permite:
 
-- Dashboard com métricas (produtos, pedidos, clientes, receita)
+- Dashboard com métricas (produtos, pedidos, clientes, receita) — sempre com dado atual, nunca em cache
 - CRUD de produtos (criar, editar, excluir)
-- Gestão de pedidos com atualização de status (Recebido → Em Produção → Enviado → Finalizado/Cancelado)
+- CRUD de categorias, refletido em tempo real na navegação pública do site
+- Detalhe de cada pedido com a personalização de cada item em destaque (para a produção), endereço e observações
+- Atualização de status do pedido (Recebido → Em Produção → Enviado → Finalizado/Cancelado)
+- Exportação de todos os pedidos em CSV (inclui personalização, endereço e valores)
+
+## Segurança
+
+- Rate limiting (contado no Postgres, sem serviço externo) em login, cadastro, contato, validação de cupom e criação de pedido
+- Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) em `next.config.ts`
+- Validação com Zod em todas as rotas de API que escrevem no banco
+- Checkout roda em transação atômica com controle de estoque condicional (sem overselling em concorrência)
 
 ## Fluxo de pedido
 
 O checkout cria o pedido no banco de dados (com status `RECEBIDO`) e direciona o cliente para confirmar os detalhes de personalização via WhatsApp — modelo comum para negócios de brindes personalizados sob encomenda, sem gateway de pagamento integrado nesta versão.
+
+## Testes
+
+- **Unitários** (`npm run test`): funções puras de `src/lib` (formatação de preço incluindo `Prisma.Decimal`, slug, geração de número de pedido, normalização de produto).
+- **E2E** (`npm run test:e2e`): fluxo completo de checkout (login → adicionar ao carrinho com personalização → endereço → confirmar pedido → verificar status no banco) e a proteção de `/checkout` para quem não está logado.
+
+Os testes E2E rodam contra o banco real definido em `DATABASE_URL` (não há banco de teste isolado configurado) — por isso cada teste limpa o que criou (pedido, endereço, estoque) ao final, mesmo se falhar no meio do caminho. Evite rodar `test:e2e` apontando para o banco de produção com dados reais de clientes.
 
 ## Publicando online (GitHub + Vercel + Neon)
 

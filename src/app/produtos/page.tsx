@@ -5,8 +5,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { SortSelect } from "@/components/product/SortSelect";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { auth } from "@/lib/auth";
-import { getFilteredProducts, getUserFavoriteIds, type ProductFilters } from "@/lib/data";
-import { ALL_CATEGORIES, CATEGORY_GROUPS } from "@/lib/constants";
+import { getFilteredProducts, getUserFavoriteIds, getCategoryGroups, type ProductFilters } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -35,10 +34,12 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
     sort: params.sort as ProductFilters["sort"],
   };
 
-  const [{ products, totalPages, total }, favoriteIds] = await Promise.all([
+  const [{ products, totalPages, total }, favoriteIds, categoryGroups] = await Promise.all([
     getFilteredProducts(filters, currentPage),
     getUserFavoriteIds(session?.user?.id),
+    getCategoryGroups(),
   ]);
+  const allCategories = categoryGroups.flatMap((g) => g.categories);
 
   // Preserva os filtros ativos ao trocar de página.
   function pageHref(page: number) {
@@ -52,7 +53,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
     return qs ? `/produtos?${qs}` : "/produtos";
   }
 
-  const activeCategory = ALL_CATEGORIES.find((c) => c.slug === params.categoria);
+  const activeCategory = allCategories.find((c) => c.slug === params.categoria);
 
   return (
     <div className="container-page py-10 md:py-14">
@@ -80,7 +81,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
               >
                 Todos os Produtos
               </Link>
-              {CATEGORY_GROUPS.map((group) => (
+              {categoryGroups.map((group) => (
                 <div key={group.group} className="mt-4">
                   <p className="mb-1.5 px-3 text-xs font-bold uppercase tracking-wide text-brand-gold-dark">
                     {group.group}
@@ -121,7 +122,7 @@ export default async function ProdutosPage({ searchParams }: { searchParams: Sea
               <Link href="/produtos" className="rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-50">
                 Todos os Produtos
               </Link>
-              {ALL_CATEGORIES.map((cat) => (
+              {allCategories.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`/produtos?categoria=${cat.slug}`}

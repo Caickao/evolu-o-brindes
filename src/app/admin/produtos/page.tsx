@@ -8,6 +8,7 @@ import { parseProductIcon } from "@/lib/data";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
 
 export const metadata: Metadata = { title: "Produtos" };
+export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({

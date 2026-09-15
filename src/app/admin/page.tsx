@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard" };
+// Painel administrativo precisa sempre refletir o estado atual do banco —
+// nunca servir uma versão em cache. Ver nota em src/app/layout.tsx sobre o
+// `revalidate` herdado do layout raiz.
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const [productCount, orderCount, userCount, orders] = await Promise.all([

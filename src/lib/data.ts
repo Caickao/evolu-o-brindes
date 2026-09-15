@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { CategoryGroup } from "@/lib/types";
 
 export function parseProductIcon(images: string): string {
   try {
@@ -70,6 +71,33 @@ export async function getNewProducts(limit = 8) {
 
 export async function getAllCategories() {
   return prisma.category.findMany({ orderBy: { order: "asc" } });
+}
+
+/**
+ * Categorias agrupadas para a navegação do site (header, menu mobile, home,
+ * rodapé, sidebar do catálogo). Vem do banco — editar/criar/excluir uma
+ * categoria no admin reflete em todo lugar que usa esta função.
+ */
+export async function getCategoryGroups(): Promise<CategoryGroup[]> {
+  const categories = await prisma.category.findMany({ orderBy: { order: "asc" } });
+
+  const groups: CategoryGroup[] = [];
+  const groupIndex = new Map<string, number>();
+
+  for (const cat of categories) {
+    if (!groupIndex.has(cat.group)) {
+      groupIndex.set(cat.group, groups.length);
+      groups.push({ group: cat.group, categories: [] });
+    }
+    groups[groupIndex.get(cat.group)!].categories.push({
+      name: cat.name,
+      slug: cat.slug,
+      icon: cat.icon || "Package",
+      description: cat.description || "",
+    });
+  }
+
+  return groups;
 }
 
 export async function getCategoryBySlug(slug: string) {

@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart, ExternalLink } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Tag, ExternalLink } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/produtos", label: "Produtos", icon: Package },
+  { href: "/admin/categorias", label: "Categorias", icon: Tag },
   { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
 ];
 

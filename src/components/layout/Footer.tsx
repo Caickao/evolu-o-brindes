@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/icons";
-import { CATEGORY_GROUPS, CONTACT, SITE_DESCRIPTION } from "@/lib/constants";
+import { CONTACT, SITE_DESCRIPTION } from "@/lib/constants";
+import type { CategoryGroup } from "@/lib/types";
 
-export function Footer() {
+export function Footer({ categoryGroups }: { categoryGroups: CategoryGroup[] }) {
   return (
     <footer className="bg-brand-black text-gray-300">
       <div className="container-page grid grid-cols-1 gap-10 py-16 md:grid-cols-2 lg:grid-cols-5">
@@ -40,7 +41,7 @@ export function Footer() {
         <div>
           <p className="font-display mb-4 text-sm font-bold uppercase tracking-wide text-white">Categorias</p>
           <ul className="flex flex-col gap-3 text-sm">
-            {CATEGORY_GROUPS.map((g) => (
+            {categoryGroups.map((g) => (
               <li key={g.group}>
                 <Link href={`/produtos?grupo=${encodeURIComponent(g.group)}`} className="hover:text-brand-gold">
                   {g.group}

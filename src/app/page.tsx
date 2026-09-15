@@ -11,17 +11,20 @@ import {
   getFeaturedProducts,
   getNewProducts,
   getUserFavoriteIds,
+  getCategoryGroups,
 } from "@/lib/data";
-import { ALL_CATEGORIES, BENEFITS, CONTACT, TESTIMONIALS } from "@/lib/constants";
+import { BENEFITS, CONTACT, TESTIMONIALS } from "@/lib/constants";
 
 export default async function HomePage() {
   const session = await auth();
-  const [featured, bestSellers, newProducts, favoriteIds] = await Promise.all([
+  const [featured, bestSellers, newProducts, favoriteIds, categoryGroups] = await Promise.all([
     getFeaturedProducts(4),
     getBestSellers(8),
     getNewProducts(4),
     getUserFavoriteIds(session?.user?.id),
+    getCategoryGroups(),
   ]);
+  const featuredCategories = categoryGroups.flatMap((g) => g.categories).slice(0, 9);
 
   return (
     <>
@@ -68,7 +71,7 @@ export default async function HomePage() {
       </section>
 
       <section className="container-page -mt-10 relative z-10 grid grid-cols-2 gap-4 pb-4 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-9">
-        {ALL_CATEGORIES.slice(0, 9).map((cat) => (
+        {featuredCategories.map((cat) => (
           <CategoryCard key={cat.slug} name={cat.name} slug={cat.slug} icon={cat.icon} />
         ))}
       </section>

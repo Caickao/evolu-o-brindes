@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "@/components/ui/Toaster";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/constants";
+import { getCategoryGroups } from "@/lib/data";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,6 +22,14 @@ const playfair = Playfair_Display({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+// O layout raiz busca categorias do banco para o menu (header/rodapé). Páginas
+// sem outra fonte de dado dinâmico (ex: /sobre, /login) seriam geradas de forma
+// estática com esse valor "congelado" no build. O revalidate + o
+// revalidatePath("/", "layout") chamado nas rotas de admin/categorias garantem
+// que uma edição de categoria apareça em todo o site assim que salva, em vez
+// de só no próximo deploy.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -58,17 +67,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const categoryGroups = await getCategoryGroups();
+
   return (
     <html
       lang="pt-BR"
       className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-brand-black">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-brand-black focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        >
+          Pular para o conteúdo
+        </a>
         <AuthProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <Header categoryGroups={categoryGroups} />
+          <main id="main-content" className="flex-1">{children}</main>
+          <Footer categoryGroups={categoryGroups} />
           <Toaster />
         </AuthProvider>
       </body>

@@ -24,8 +24,9 @@ import { MobileMenu } from "./MobileMenu";
 import { MegaMenu } from "./MegaMenu";
 import { CONTACT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { CategoryGroup } from "@/lib/types";
 
-export function Header() {
+export function Header({ categoryGroups }: { categoryGroups: CategoryGroup[] }) {
   const { data: session, status } = useSession();
   const mounted = useMounted();
   const totalItems = useCartStore((s) => s.totalItems());
@@ -102,10 +103,13 @@ export function Header() {
               Início
             </Link>
             <div className="group relative">
-              <button className="text-sm font-semibold tracking-wide hover:text-brand-gold-dark">
+              <button
+                aria-haspopup="true"
+                className="text-sm font-semibold tracking-wide hover:text-brand-gold-dark focus-visible:text-brand-gold-dark"
+              >
                 Produtos
               </button>
-              <MegaMenu />
+              <MegaMenu categoryGroups={categoryGroups} />
             </div>
             <Link href="/sobre" className="text-sm font-semibold tracking-wide hover:text-brand-gold-dark">
               Sobre Nós
@@ -135,11 +139,12 @@ export function Header() {
             <div className="group relative hidden md:block">
               <button
                 aria-label="Minha conta"
+                aria-haspopup="true"
                 className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
               >
                 <User className="h-5 w-5" />
               </button>
-              <div className="absolute right-0 top-full z-50 hidden w-64 pt-3 group-hover:block">
+              <div className="absolute right-0 top-full z-50 hidden w-64 pt-3 group-hover:block group-focus-within:block">
                 <div className="rounded-xl border border-gray-100 bg-white p-2 shadow-2xl">
                   {status === "authenticated" ? (
                     <>
@@ -237,7 +242,7 @@ export function Header() {
         )}
       </header>
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} categoryGroups={categoryGroups} />
     </>
   );
 }

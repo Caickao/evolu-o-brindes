@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
-import { ALL_CATEGORIES } from "@/lib/constants";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await prisma.product.findMany({ select: { slug: true, updatedAt: true } });
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({ select: { slug: true, updatedAt: true } }),
+    prisma.category.findMany({ select: { slug: true } }),
+  ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: siteUrl, changeFrequency: "daily", priority: 1 },
@@ -14,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/contato`, changeFrequency: "monthly", priority: 0.5 },
   ];
 
-  const categoryRoutes: MetadataRoute.Sitemap = ALL_CATEGORIES.map((cat) => ({
+  const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat) => ({
     url: `${siteUrl}/produtos?categoria=${cat.slug}`,
     changeFrequency: "weekly",
     priority: 0.6,

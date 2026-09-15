@@ -1,14 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
-import { CATEGORY_GROUPS, CONTACT } from "@/lib/constants";
+import { CONTACT } from "@/lib/constants";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { cn } from "@/lib/utils";
+import type { CategoryGroup } from "@/lib/types";
 
-export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+export function MobileMenu({
+  open,
+  onClose,
+  categoryGroups,
+}: {
+  open: boolean;
+  onClose: () => void;
+  categoryGroups: CategoryGroup[];
+}) {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  // Foco preso dentro do painel + fechar com Esc, enquanto o menu está aberto.
+  useEffect(() => {
+    if (!open) return;
+
+    previouslyFocused.current = document.activeElement as HTMLElement;
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused.current?.focus();
+    };
+  }, [open, onClose]);
 
   return (
     <div
@@ -16,9 +66,14 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
         "fixed inset-0 z-[90] transition-opacity duration-300 md:hidden",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       )}
+      inert={!open}
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
         className={cn(
           "absolute right-0 top-0 h-full w-[86%] max-w-sm overflow-y-auto bg-white transition-transform duration-300",
           open ? "translate-x-0" : "translate-x-full"
@@ -27,6 +82,7 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <span className="font-display text-lg font-bold">Menu</span>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             aria-label="Fechar menu"
             className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
@@ -43,10 +99,11 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
             Todos os Produtos
           </Link>
 
-          {CATEGORY_GROUPS.map((group) => (
+          {categoryGroups.map((group) => (
             <div key={group.group} className="border-b border-gray-100">
               <button
                 className="flex w-full items-center justify-between py-4 text-base font-semibold"
+                aria-expanded={openGroup === group.group}
                 onClick={() => setOpenGroup(openGroup === group.group ? null : group.group)}
               >
                 {group.group}

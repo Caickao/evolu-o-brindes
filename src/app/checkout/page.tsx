@@ -230,7 +230,7 @@ export default function CheckoutPage() {
               <span>{formatPrice(total())}</span>
             </div>
           </div>
-          <Button onClick={confirmOrder} disabled={submitting} fullWidth size="lg">
+          <Button onClick={confirmOrder} disabled={submitting || loadingAddresses} fullWidth size="lg">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Pedido"}
           </Button>
         </div>
