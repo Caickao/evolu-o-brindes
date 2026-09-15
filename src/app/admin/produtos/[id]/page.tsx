@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ProductForm } from "@/components/admin/ProductForm";
-import { parseProductIcon } from "@/lib/data";
+import { parseProductIcon, parseProductPhotos } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Editar Produto" };
 
@@ -29,6 +29,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           compareAtPrice: product.compareAtPrice,
           categoryId: product.categoryId,
           icon: parseProductIcon(product.images),
+          photos: parseProductPhotos(product.photos),
           stock: product.stock,
           minQuantity: product.minQuantity,
           customizable: product.customizable,

@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { ProductImage } from "@/components/ui/ProductImage";
+import { ProductMedia } from "@/components/ui/ProductMedia";
 import { Badge } from "@/components/ui/Badge";
 import { FavoriteButton } from "./FavoriteButton";
 import { AddToCartButton } from "./AddToCartButton";
 import { formatPrice } from "@/lib/utils";
-import { parseProductIcon } from "@/lib/data";
+import { parseProductIcon, parseProductPhotos } from "@/lib/data";
 import type { ProductWithCategory } from "@/lib/types";
 
 export function ProductCard({
@@ -25,7 +25,8 @@ export function ProductCard({
       className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white transition-shadow hover:shadow-xl"
     >
       <div className="relative aspect-square">
-        <ProductImage
+        <ProductMedia
+          photos={parseProductPhotos(product.photos)}
           icon={parseProductIcon(product.images)}
           name={product.name}
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"

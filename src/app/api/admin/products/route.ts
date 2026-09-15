@@ -12,6 +12,7 @@ const schema = z.object({
   compareAtPrice: z.number().positive().optional().nullable(),
   categoryId: z.string(),
   icon: z.string().min(1),
+  photos: z.array(z.string().url()).default([]),
   stock: z.number().int().nonnegative().default(100),
   minQuantity: z.number().int().positive().default(1),
   customizable: z.boolean().default(true),
@@ -42,13 +43,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || "Dados inválidos" }, { status: 400 });
   }
 
-  const { icon, ...data } = parsed.data;
+  const { icon, photos, ...data } = parsed.data;
 
   const product = await prisma.product.create({
     data: {
       ...data,
       slug: slugify(data.name),
       images: JSON.stringify([icon]),
+      photos: JSON.stringify(photos),
     },
   });
 

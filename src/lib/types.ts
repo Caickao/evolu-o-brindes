@@ -7,6 +7,7 @@ export type ProductWithCategory = {
   price: number;
   compareAtPrice: number | null;
   images: string;
+  photos: string;
   categoryId: string;
   category: { id: string; name: string; slug: string; group: string; icon: string | null };
   customizable: boolean;

@@ -2,13 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, ShieldCheck, Sparkles, Truck, Star } from "lucide-react";
-import { ProductImage } from "@/components/ui/ProductImage";
 import { Badge } from "@/components/ui/Badge";
 import { FavoriteButton } from "@/components/product/FavoriteButton";
+import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductDetailActions } from "@/components/product/ProductDetailActions";
 import { ProductCard } from "@/components/product/ProductCard";
 import { auth } from "@/lib/auth";
-import { getProductBySlug, getRelatedProducts, getUserFavoriteIds, parseProductIcon } from "@/lib/data";
+import {
+  getProductBySlug,
+  getRelatedProducts,
+  getUserFavoriteIds,
+  parseProductIcon,
+  parseProductPhotos,
+} from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 
 export async function generateMetadata({
@@ -85,15 +91,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </nav>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-3xl">
-          <ProductImage icon={parseProductIcon(product.images)} name={product.name} className="h-full w-full" iconClassName="h-28 w-28" />
-          <div className="absolute left-4 top-4 flex flex-col gap-1.5">
-            {product.isNew && <Badge tone="black">Novo</Badge>}
-            {product.isBestSeller && <Badge tone="gold">Mais Vendido</Badge>}
-            {discount && <Badge tone="red">-{discount}%</Badge>}
-          </div>
-          <FavoriteButton productId={product.id} initialFavorited={favoriteIds.has(product.id)} className="absolute right-4 top-4" />
-        </div>
+        <ProductGallery
+          photos={parseProductPhotos(product.photos)}
+          icon={parseProductIcon(product.images)}
+          name={product.name}
+          badges={
+            <>
+              {product.isNew && <Badge tone="black">Novo</Badge>}
+              {product.isBestSeller && <Badge tone="gold">Mais Vendido</Badge>}
+              {discount && <Badge tone="red">-{discount}%</Badge>}
+            </>
+          }
+          favoriteSlot={
+            <FavoriteButton
+              productId={product.id}
+              initialFavorited={favoriteIds.has(product.id)}
+              className="absolute right-4 top-4"
+            />
+          }
+        />
 
         <div className="flex flex-col gap-5">
           <div>

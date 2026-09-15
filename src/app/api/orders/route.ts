@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const schema = z.object({
   addressId: z.string().optional(),
@@ -24,6 +25,9 @@ export async function POST(req: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Você precisa estar logado para finalizar o pedido" }, { status: 401 });
   }
+
+  const limit = await rateLimit(`orders:${session.user.id}`, 10, 60 * 60);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   const body = await req.json();
   const parsed = schema.safeParse(body);

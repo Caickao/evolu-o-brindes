@@ -75,6 +75,7 @@ model Product {
   price           Float
   compareAtPrice  Float?
   images          String
+  photos          String   @default("[]")
   categoryId      String
   category        Category @relation(fields: [categoryId], references: [id])
   customizable    Boolean  @default(true)
@@ -152,4 +153,12 @@ model ContactMessage {
   subject   String?
   message   String
   createdAt DateTime @default(now())
+}
+
+// Backend simples de rate limiting (janela fixa), sem depender de um serviço externo novo.
+// Para tráfego alto no futuro, considerar migrar para Redis (ex: Upstash).
+model RateLimitEntry {
+  key         String   @id
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
 }

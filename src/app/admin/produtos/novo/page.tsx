@@ -20,6 +20,7 @@ export default async function NewProductPage() {
           compareAtPrice: null,
           categoryId: "",
           icon: "Package",
+          photos: [],
           stock: 100,
           minQuantity: 1,
           customizable: true,

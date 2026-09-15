@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { useToastStore } from "@/store/toast-store";
@@ -24,6 +24,7 @@ export type ProductFormValues = {
   compareAtPrice?: number | null;
   categoryId: string;
   icon: string;
+  photos: string[];
   stock: number;
   minQuantity: number;
   customizable: boolean;
@@ -48,6 +49,18 @@ export function ProductForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function updatePhoto(index: number, value: string) {
+    setForm((prev) => ({ ...prev, photos: prev.photos.map((p, i) => (i === index ? value : p)) }));
+  }
+
+  function addPhoto() {
+    setForm((prev) => ({ ...prev, photos: [...prev.photos, ""] }));
+  }
+
+  function removePhoto(index: number) {
+    setForm((prev) => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -63,6 +76,7 @@ export function ProductForm({
           compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
           stock: Number(form.stock),
           minQuantity: Number(form.minQuantity),
+          photos: form.photos.map((p) => p.trim()).filter(Boolean),
         }),
       });
       const data = await res.json();
@@ -141,6 +155,53 @@ export function ProductForm({
               <DynamicIcon name={icon} className="h-4 w-4" />
             </button>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-2 block text-xs font-semibold uppercase text-gray-500">
+          Fotos do produto (opcional)
+        </label>
+        <p className="mb-3 text-xs text-gray-400">
+          Cole a URL de cada foto (já hospedada em algum lugar — ex: link direto de uma imagem). A
+          primeira foto vira a imagem principal. Sem nenhuma foto, o produto continua usando o
+          ícone de identidade visual como antes.
+        </p>
+        <div className="flex flex-col gap-2">
+          {form.photos.map((photo, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                {photo ? (
+                  // Preview simples da URL colada; se a URL for inválida, o navegador mostra o ícone quebrado nativo.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ImageOff className="h-4 w-4 text-gray-300" />
+                )}
+              </div>
+              <input
+                value={photo}
+                onChange={(e) => updatePhoto(index, e.target.value)}
+                placeholder="https://exemplo.com/foto-do-produto.jpg"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-gold"
+              />
+              <button
+                type="button"
+                onClick={() => removePhoto(index)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center text-gray-400 hover:text-red-600"
+                aria-label="Remover foto"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addPhoto}
+            className="flex items-center gap-2 self-start text-sm font-bold uppercase text-brand-gold-dark"
+          >
+            <Plus className="h-4 w-4" /> Adicionar foto
+          </button>
         </div>
       </div>
 

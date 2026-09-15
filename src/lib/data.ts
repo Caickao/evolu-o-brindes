@@ -9,6 +9,16 @@ export function parseProductIcon(images: string): string {
   }
 }
 
+/** Fotos reais do produto (galeria). Vazio até que alguém cadastre uma foto. */
+export function parseProductPhotos(photos: string): string[] {
+  try {
+    const parsed = JSON.parse(photos);
+    return Array.isArray(parsed) ? parsed.filter((p) => typeof p === "string" && p.length > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
 const productInclude = { category: true } as const;
 
 export async function getFeaturedProducts(limit = 4) {
@@ -83,12 +93,21 @@ export async function getFilteredProducts(filters: ProductFilters) {
     where.category = { group: filters.grupo };
   }
 
-  if (filters.q) {
-    where.OR = [
-      { name: { contains: filters.q } },
-      { description: { contains: filters.q } },
-      { shortDescription: { contains: filters.q } },
+  const q = filters.q?.trim();
+  if (q) {
+    const searchOr: Record<string, unknown>[] = [
+      { name: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+      { shortDescription: { contains: q, mode: "insensitive" } },
     ];
+
+    // Só busca pelo nome da categoria quando não há filtro de categoria/grupo já aplicado,
+    // para não misturar dois critérios de categoria diferentes na mesma consulta.
+    if (!filters.categoria && !filters.grupo) {
+      searchOr.push({ category: { name: { contains: q, mode: "insensitive" } } });
+    }
+
+    where.OR = searchOr;
   }
 
   let orderBy: Record<string, "asc" | "desc"> = { createdAt: "desc" };
